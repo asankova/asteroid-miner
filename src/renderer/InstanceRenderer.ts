@@ -96,7 +96,7 @@ export class InstanceRenderer {
     const ry = robot.y + (robot.targetY - robot.y) * lerpT
     d[base + 0] = rx
     d[base + 1] = ry
-    d[base + 2] = 12  // scale in world units
+    d[base + 2] = 40  // scale in world units (~10px at default zoom 0.25)
     d[base + 3] = Math.atan2(robot.targetY - robot.y, robot.targetX - robot.x)
     d[base + 4] = ROBOT_SPRITE_INDEX[robot.type]
     d[base + 5] = 0.8  // colorR

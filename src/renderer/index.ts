@@ -109,7 +109,7 @@ export class Renderer {
 
     // Layer 1: World (asteroids as point sprites)
     this.worldRenderer.updateFromField(state.asteroids, this.spatialHash, viewport)
-    this.worldRenderer.render(vm, this.lod.alpha)
+    this.worldRenderer.render(vm, this.lod.alpha, this.camera.zoom)
 
     // Layer 2: Entities (robots, instanced)
     this.instanceRenderer.clear()
