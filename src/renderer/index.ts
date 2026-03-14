@@ -8,6 +8,7 @@ import type { AsteroidData, RobotData } from '../types/index.ts'
 import { FIELD_SIZE } from '../types/index.ts'
 
 export { CameraController, LODManager, SpatialHash }
+export { Minimap } from './Minimap.ts'
 
 export interface RendererState {
   asteroids: AsteroidData[]
@@ -115,7 +116,7 @@ export class Renderer {
     for (const robot of state.robots) {
       this.instanceRenderer.addRobot(robot)
     }
-    this.instanceRenderer.render(vm, this.lod.level)
+    this.instanceRenderer.render(vm, this.lod.level, this.camera.zoom)
 
     // Layer 3: Decorative GPU particles
     this.particles.update(dt, FIELD_SIZE)

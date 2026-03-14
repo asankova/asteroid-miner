@@ -106,12 +106,13 @@ export class InstanceRenderer {
     this.dirty = true
   }
 
-  render(viewMatrix: Float32Array, _lodLevel: number): void {
+  render(viewMatrix: Float32Array, _lodLevel: number, zoom: number): void {
     if (this.instanceCount === 0) return
     const gl = this.gl
 
     gl.useProgram(this.program)
     gl.uniformMatrix3fv(gl.getUniformLocation(this.program, 'u_viewMatrix'), false, viewMatrix)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_zoom'), zoom)
 
     if (this.dirty) {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
