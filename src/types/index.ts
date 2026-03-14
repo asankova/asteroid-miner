@@ -54,3 +54,21 @@ export enum LODLevel {
   L3 = 3,
   L4 = 4, // closest — equipment detail
 }
+
+// Re-export ResourceType so consumers can import from one place
+export { ResourceType } from '../world/ResourceConcentrationMap.ts'
+
+/** Maximum cargo units a robot can carry before auto-queueing a HAUL task */
+export const MAX_CARGO = 500
+
+/** Snapshot of a robot's cargo hold — keyed by ResourceType (number) → amount (units) */
+export type CargoManifest = ReadonlyMap<number, number>
+
+/** Data shape for a resource depot in the world */
+export interface ResourceDepotData {
+  id: number
+  x: number
+  y: number
+  /** Total deposited resources since game start, keyed by ResourceType */
+  ledger: ReadonlyMap<number, number>
+}

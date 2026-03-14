@@ -1,6 +1,6 @@
 import { BTNode, NodeResult } from './BehaviorTree.ts'
 import type { BTContext } from './BehaviorTree.ts'
-import { TaskType } from './TaskQueue.ts'
+import { TaskType, TaskSource } from './TaskQueue.ts'
 import type { TaskQueue } from './TaskQueue.ts'
 import { TelemetryRingBuffer, TelemetryEventType } from './Telemetry.ts'
 import { YieldCalculator } from '../mining/YieldCalculator.ts'
@@ -10,7 +10,7 @@ import { MiningToolType, TOOL_PROFILES } from '../mining/MiningTool.ts'
 import type { ToolProfile } from '../mining/MiningTool.ts'
 import type { AsteroidFullData } from '../world/AsteroidField.ts'
 import { ResourceType, RESOURCE_COUNT } from '../world/ResourceConcentrationMap.ts'
-import { RobotState } from '../types/index.ts'
+import { RobotState, MAX_CARGO } from '../types/index.ts'
 
 /** Minimal interface for the robot host — avoids circular dependency with RobotEntity */
 export interface MiningHost {
@@ -103,6 +103,18 @@ export class MiningAction extends BTNode {
     // Apply yield to cargo
     const resource = ctx.blackboard.get<number>('mineResource')!
     this.robot.cargo.set(resource, (this.robot.cargo.get(resource) ?? 0) + pending.yieldAmount * 100)
+
+    // Check cargo capacity — if full, queue a haul task and pause mining
+    const totalCargo = [...this.robot.cargo.values()].reduce((s, v) => s + v, 0)
+    if (totalCargo >= MAX_CARGO) {
+      this.robot.taskQueue.assign({
+        type: TaskType.HAUL, priority: 1, source: TaskSource.SELF,
+      })
+      this.clearBlackboard(ctx)
+      this.robot.taskQueue.complete() // complete MINE — will resume after haul via re-assign
+      this.robot.state = RobotState.IDLE
+      return NodeResult.SUCCESS
+    }
 
     // Apply structural damage
     const { newIntegrity, events } = this.integritySystem.applyDamage(

@@ -88,13 +88,14 @@ export class WorldRenderer {
     void asteroids
   }
 
-  render(viewMatrix: Float32Array, lodAlpha: number): void {
+  render(viewMatrix: Float32Array, lodAlpha: number, zoom: number): void {
     if (this.count === 0) return
     const gl = this.gl
 
     gl.useProgram(this.program)
     gl.uniformMatrix3fv(gl.getUniformLocation(this.program, 'u_viewMatrix'), false, viewMatrix)
     gl.uniform1f(gl.getUniformLocation(this.program, 'u_lodAlpha'), lodAlpha)
+    gl.uniform1f(gl.getUniformLocation(this.program, 'u_zoom'), zoom)
 
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)

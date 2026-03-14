@@ -28,6 +28,11 @@ export class CameraController {
   // dt tracking inside update()
   private lastUpdateTime = 0
 
+  // Mouse event timing for accurate inertia velocity
+  private lastMouseTime = 0
+  private lastMouseDx = 0
+  private lastMouseDy = 0
+
   // Touch state
   private touches: Map<number, Vec2> = new Map()
   private lastPinchDist = 0
@@ -39,6 +44,7 @@ export class CameraController {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
+    this.canvas.style.cursor = 'grab'
     this.bindEvents()
   }
 
@@ -129,11 +135,11 @@ export class CameraController {
     if (!this.isDragging && (this.velX !== 0 || this.velY !== 0)) {
       this.x += this.velX * dt
       this.y += this.velY * dt
-      // Decay: ~15% velocity remains after 1 second
-      const decay = Math.pow(0.15, dt)
+      // Decay: smooth glide, ~8% velocity remains after 1 second
+      const decay = Math.pow(0.08, dt)
       this.velX *= decay
       this.velY *= decay
-      if (Math.abs(this.velX) < 10 && Math.abs(this.velY) < 10) {
+      if (Math.abs(this.velX) < 5 && Math.abs(this.velY) < 5) {
         this.velX = 0
         this.velY = 0
       }
@@ -167,26 +173,49 @@ export class CameraController {
       if (e.button === 0) {
         this.isDragging = true
         this.lastMouse = { x: e.clientX, y: e.clientY }
+        this.lastMouseTime = performance.now()
+        this.lastMouseDx = 0
+        this.lastMouseDy = 0
         this.animating = false
         this.velX = 0
         this.velY = 0
+        this.canvas.style.cursor = 'grabbing'
       }
     })
 
     window.addEventListener('mouseup', () => {
+      if (this.isDragging) {
+        // Use the tracked mouse delta/time for final velocity
+        const now = performance.now()
+        const dt = Math.max((now - this.lastMouseTime) / 1000, 0.001)
+        if (dt < 0.1) {
+          // Only apply inertia if mouse was moving recently
+          this.velX = (-this.lastMouseDx / this.zoom / dt) * 0.7
+          this.velY = (-this.lastMouseDy / this.zoom / dt) * 0.7
+          // Cap velocity to prevent crazy flings
+          const speed = Math.hypot(this.velX, this.velY)
+          const maxSpeed = 8000 / this.zoom
+          if (speed > maxSpeed) {
+            this.velX = (this.velX / speed) * maxSpeed
+            this.velY = (this.velY / speed) * maxSpeed
+          }
+        }
+      }
       this.isDragging = false
+      this.canvas.style.cursor = 'grab'
     })
 
     this.canvas.addEventListener('mousemove', (e) => {
       if (!this.isDragging) return
-      const dx = (e.clientX - this.lastMouse.x) / this.zoom
-      const dy = (e.clientY - this.lastMouse.y) / this.zoom
-      this.x -= dx
-      this.y -= dy
-      // Track velocity for inertia (world units per second)
-      const dt = this.lastUpdateTime > 0 ? Math.max((performance.now() - this.lastUpdateTime) / 1000, 0.001) : 0.016
-      this.velX = (-dx / dt) * 0.85 // slight damping
-      this.velY = (-dy / dt) * 0.85
+      const now = performance.now()
+      const screenDx = e.clientX - this.lastMouse.x
+      const screenDy = e.clientY - this.lastMouse.y
+      this.x -= screenDx / this.zoom
+      this.y -= screenDy / this.zoom
+      // Track raw screen deltas and time for release-velocity calculation
+      this.lastMouseDx = screenDx
+      this.lastMouseDy = screenDy
+      this.lastMouseTime = now
       this.lastMouse = { x: e.clientX, y: e.clientY }
       this.clamp()
       this.onChange?.()

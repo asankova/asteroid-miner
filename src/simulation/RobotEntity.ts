@@ -9,7 +9,10 @@ import { TaskQueue, TaskType, TaskSource } from './TaskQueue.ts'
 import type { RobotTask } from './TaskQueue.ts'
 import { TelemetryRingBuffer, TelemetryEventType } from './Telemetry.ts'
 import { MiningAction } from './MiningAction.ts'
+import { HaulAction } from './HaulAction.ts'
 import type { AsteroidFullData } from '../world/AsteroidField.ts'
+import type { ResourceDepotEntity } from './ResourceDepotEntity.ts'
+import { MAX_CARGO } from '../types/index.ts'
 
 const ROBOT_SPEED: Record<RobotType, number> = {
   [RobotType.SCOUT]:      400,
@@ -39,6 +42,7 @@ export class RobotEntity {
   private bt: BTNode
   private telemetry: TelemetryRingBuffer
   private miningAction: MiningAction
+  private haulAction: HaulAction
 
   constructor(
     id: number,
@@ -47,6 +51,7 @@ export class RobotEntity {
     y: number,
     telemetry: TelemetryRingBuffer,
     getAsteroid: (id: number) => AsteroidFullData | undefined = () => undefined,
+    getNearestDepot: () => ResourceDepotEntity | undefined = () => undefined,
   ) {
     this.id = id
     this.type = type
@@ -56,6 +61,7 @@ export class RobotEntity {
     this.targetY = y
     this.telemetry = telemetry
     this.miningAction = new MiningAction(this, telemetry, getAsteroid)
+    this.haulAction = new HaulAction(this, telemetry, getNearestDepot)
     this.bt = this.buildBT()
   }
 
@@ -126,6 +132,9 @@ export class RobotEntity {
     switch (task.type) {
       case TaskType.MINE: {
         return this.miningAction.tick(ctx)
+      }
+      case TaskType.HAUL: {
+        return this.haulAction.tick(ctx)
       }
       case TaskType.SURVEY: {
         if (task.targetX !== undefined) this.targetX = task.targetX

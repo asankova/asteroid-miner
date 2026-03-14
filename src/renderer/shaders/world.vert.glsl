@@ -6,6 +6,7 @@ in float a_rotation;
 
 uniform mat3 u_viewMatrix;
 uniform float u_lodAlpha;
+uniform float u_zoom;
 
 out float v_typeIndex;
 out float v_radius;
@@ -21,5 +22,5 @@ void main() {
   vec3 worldPos = u_viewMatrix * vec3(a_position, 1.0);
   v_localPos = a_position;
   gl_Position = vec4(worldPos.xy, 0.0, 1.0);
-  gl_PointSize = max(a_radius * 2.0 * abs(u_viewMatrix[0][0]), 2.0);
+  gl_PointSize = max(a_radius * 2.0 * u_zoom, 3.0);
 }

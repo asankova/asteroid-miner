@@ -1,16 +1,26 @@
 import { RobotType, FIELD_SIZE } from '../types/index.ts'
-import type { RobotData } from '../types/index.ts'
+import type { RobotData, AsteroidData } from '../types/index.ts'
 import { RobotEntity } from './RobotEntity.ts'
 import { TelemetryRingBuffer } from './Telemetry.ts'
 import type { TelemetryEvent } from './Telemetry.ts'
 import { TaskType, TaskSource } from './TaskQueue.ts'
 import type { AsteroidFullData } from '../world/AsteroidField.ts'
+import type { HUDSnapshot } from '../ui/types.ts'
+import { ResourceDepotEntity } from './ResourceDepotEntity.ts'
 
 export class SimulationManager {
   readonly robots: Map<number, RobotEntity> = new Map()
   readonly telemetry = new TelemetryRingBuffer()
+  /** Primary resource depot — spawned near field center */
+  depot: ResourceDepotEntity | null = null
   private nextRobotId = 1
   private asteroids: AsteroidFullData[] = []
+
+  /** Place the resource depot at (x, y). Call once during world setup. */
+  placeDepot(x: number, y: number): ResourceDepotEntity {
+    this.depot = new ResourceDepotEntity(x, y)
+    return this.depot
+  }
 
   spawnRobot(type: RobotType, x?: number, y?: number): RobotEntity {
     const rx = x ?? FIELD_SIZE / 2 + (Math.random() - 0.5) * 1000
@@ -18,6 +28,7 @@ export class SimulationManager {
     const robot = new RobotEntity(
       this.nextRobotId++, type, rx, ry, this.telemetry,
       (id) => this.asteroids.find(a => a.id === id),
+      () => this.depot ?? undefined,
     )
     this.robots.set(robot.id, robot)
     return robot
@@ -71,5 +82,34 @@ export class SimulationManager {
 
   drainTelemetry(): TelemetryEvent[] {
     return this.telemetry.drain()
+  }
+
+  getHUDSnapshot(fps: number, asteroids: AsteroidData[], selectedAsteroidId: number | null, selectedRobotId: number | null): HUDSnapshot {
+    // Authoritative resource totals = depot ledger + in-transit robot cargo
+    const resources: Map<number, number> = new Map(this.depot?.ledger ?? [])
+    const robotEntries = Array.from(this.robots.values()).map(r => {
+      let cargoTotal = 0
+      for (const [resType, amount] of r.cargo) {
+        resources.set(resType, (resources.get(resType) ?? 0) + amount)
+        cargoTotal += amount
+      }
+      return {
+        id: r.id,
+        type: r.type,
+        state: r.state,
+        energy: r.energy,
+        cargoTotal,
+        x: r.x,
+        y: r.y,
+      }
+    })
+    return {
+      resources,
+      robots: robotEntries,
+      fps,
+      asteroids,
+      selectedAsteroidId,
+      selectedRobotId,
+    }
   }
 }
