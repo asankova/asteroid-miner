@@ -29,7 +29,19 @@
   <body>
     <canvas id="game-canvas"></canvas>
     <div id="ui-overlay"></div>
+    <div id="hud-mount"></div>
     <div id="debug-overlay"></div>
+    <div id="controls-hint" style="
+      position:fixed; bottom:12px; left:50%; transform:translateX(-50%);
+      font:11px/1.9 monospace; color:rgba(160,200,255,0.7);
+      background:rgba(0,0,8,0.65); padding:6px 16px; border-radius:4px;
+      pointer-events:none; z-index:15; text-align:center;
+      transition:opacity 1s; white-space:nowrap;
+    ">
+      Drag to pan &nbsp;·&nbsp; Scroll / +- to zoom &nbsp;·&nbsp;
+      WASD / Arrows to move &nbsp;·&nbsp; Double-click to zoom in &nbsp;·&nbsp;
+      Home to reset view &nbsp;·&nbsp; F3 debug
+    </div>
     <div id="webgl-error">
       WebGL2 is required to run Asteroid Miner.<br>
       Please use a modern browser (Chrome 56+, Firefox 51+, Safari 15+).

@@ -11,11 +11,13 @@ out float v_typeIndex;
 out float v_radius;
 out vec2 v_localPos;
 out float v_lodAlpha;
+out float v_rotation;
 
 void main() {
   v_typeIndex = a_typeIndex;
   v_radius = a_radius;
   v_lodAlpha = u_lodAlpha;
+  v_rotation = a_rotation;
   vec3 worldPos = u_viewMatrix * vec3(a_position, 1.0);
   v_localPos = a_position;
   gl_Position = vec4(worldPos.xy, 0.0, 1.0);

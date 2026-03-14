@@ -12,6 +12,7 @@ in float a_colorG;
 in float a_alpha;
 
 uniform mat3 u_viewMatrix;
+uniform float u_zoom; // pixels per world unit
 
 out float v_spriteIndex;
 out vec3 v_color;
@@ -23,7 +24,11 @@ void main() {
   float s = sin(a_rotation);
   mat2 rot = mat2(c, s, -s, c);
 
-  vec2 local = rot * (a_vertex * a_scale);
+  // Ensure robots are at least 10 screen pixels regardless of zoom
+  float minWorldScale = 10.0 / max(u_zoom, 0.001);
+  float worldScale = max(a_scale, minWorldScale);
+
+  vec2 local = rot * (a_vertex * worldScale);
   vec3 world = u_viewMatrix * vec3(a_pos + local, 1.0);
 
   v_spriteIndex = a_spriteIndex;
